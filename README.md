@@ -1,0 +1,2 @@
+# equalsanalyser
+Analyses Equals Transactions
