@@ -13,6 +13,7 @@ const REQUIRED_COLUMNS = [
 ];
 
 const DISPLAY_COLUMNS = REQUIRED_COLUMNS.filter((column) => column !== "Attachment 1");
+const RECEIPT_EMAIL_COLUMN = "Receipt email";
 
 const DATE_COLUMN = "Completed date (UTC)";
 const NAME_COLUMN = "Name";
@@ -315,13 +316,17 @@ function renderTransactionHeader() {
     }
     elements.transactionHeader.append(th);
   });
+
+  const actionHeader = document.createElement("th");
+  actionHeader.textContent = RECEIPT_EMAIL_COLUMN;
+  elements.transactionHeader.append(actionHeader);
 }
 
 function renderTransactions() {
   elements.transactionBody.innerHTML = "";
 
   if (!state.filteredRows.length) {
-    elements.transactionBody.append(emptyRow("No matching transactions.", DISPLAY_COLUMNS.length));
+    elements.transactionBody.append(emptyRow("No matching transactions.", DISPLAY_COLUMNS.length + 1));
     return;
   }
 
@@ -335,6 +340,7 @@ function renderTransactions() {
       const classes = column === DEBIT_COLUMN || column === "Total credited" ? "numeric" : "";
       tr.append(createCell(formatDisplayValue(row, column), classes));
     });
+    tr.append(createReceiptEmailCell(row));
 
     elements.transactionBody.append(tr);
   });
@@ -355,6 +361,71 @@ function formatDisplayValue(row, column) {
   }
 
   return row[column];
+}
+
+function createReceiptEmailCell(row) {
+  const td = document.createElement("td");
+
+  if (!isMissingReceipt(row)) {
+    return td;
+  }
+
+  const button = document.createElement("button");
+  button.className = "copy-email-button";
+  button.type = "button";
+  button.textContent = "Copy email";
+  button.addEventListener("click", async () => {
+    try {
+      await copyTextToClipboard(generateMissingReceiptEmail(row));
+      setStatus(`Copied receipt request email for ${row[NAME_COLUMN] || "this transaction"}.`);
+    } catch (error) {
+      setStatus("The email text could not be copied. Please try again.", true);
+    }
+  });
+  td.append(button);
+
+  return td;
+}
+
+function generateMissingReceiptEmail(row) {
+  const cardHolder = row[NAME_COLUMN] || "there";
+  const description = row["Description"] || "No description supplied";
+  const reference = row["Reference"] || "No reference supplied";
+  const completedDate = row[DATE_COLUMN] || "No completed date supplied";
+  const balance = row[BALANCE_COLUMN] || "No balance supplied";
+  const debitAmount = row[DEBIT_COLUMN] ? formatCurrency(parseCurrency(row[DEBIT_COLUMN])) : "0.00";
+
+  return [
+    `Hi ${cardHolder},`,
+    "",
+    "Please log in to the Equals app and upload a receipt for this card transaction as soon as possible.",
+    "",
+    "Transaction details:",
+    `- Completed date: ${completedDate}`,
+    `- Description: ${description}`,
+    `- Reference: ${reference}`,
+    `- Balance: ${balance}`,
+    `- Total debited: ${debitAmount}`,
+    "",
+    "Thank you.",
+  ].join("\n");
+}
+
+async function copyTextToClipboard(text) {
+  if (typeof navigator !== "undefined" && navigator.clipboard && window.isSecureContext) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+
+  const textArea = document.createElement("textarea");
+  textArea.value = text;
+  textArea.setAttribute("readonly", "");
+  textArea.style.position = "fixed";
+  textArea.style.left = "-9999px";
+  document.body.append(textArea);
+  textArea.select();
+  document.execCommand("copy");
+  textArea.remove();
 }
 
 function emptyRow(message, colSpan) {

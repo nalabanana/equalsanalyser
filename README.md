@@ -40,6 +40,7 @@ The app expects the following Equals Money Transaction Activity columns for filt
 - Filter transactions by completed date range.
 - Show only completed card transactions (`Type` = `Card`, `Status` = `Complete`) that do not have receipts attached.
 - Show 🚨 in the `Attachment lost` column when the CSV value is true.
+- Copy a personalised email message for each missing-receipt transaction asking the card holder to log in to the Equals app and upload the receipt.
 - Review a bottom-of-page summary of summed `Total debited` values grouped by `Balance`.
 
 ## Example data notes
