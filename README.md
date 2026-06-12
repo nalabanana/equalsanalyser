@@ -38,7 +38,8 @@ The app expects the following Equals Money Transaction Activity columns for disp
 - Load an included anonymised example CSV for development and testing.
 - View all card holders or filter to a single holder using the `Name` column.
 - Filter transactions by completed date range.
-- Show only transactions that do not have receipts attached.
+- Show only completed card transactions (`Type` = `Card`, `Status` = `Complete`) that do not have receipts attached.
+- Open `Attachment 1` receipt URLs directly from the results table.
 - Review a summary of summed `Total debited` values grouped by `Balance`.
 
 ## Example data notes

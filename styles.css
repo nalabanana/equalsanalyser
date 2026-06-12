@@ -293,6 +293,16 @@ tr:last-child td {
   border-bottom: 0;
 }
 
+.table-wrap a {
+  color: var(--primary);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.table-wrap a:hover {
+  color: var(--primary-dark);
+}
+
 .numeric {
   text-align: right;
 }

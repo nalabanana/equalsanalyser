@@ -16,6 +16,8 @@ const DATE_COLUMN = "Completed date (UTC)";
 const NAME_COLUMN = "Name";
 const BALANCE_COLUMN = "Balance";
 const DEBIT_COLUMN = "Total debited";
+const TYPE_COLUMN = "Type";
+const STATUS_COLUMN = "Status";
 const ATTACHMENT_LOST_COLUMN = "Attachment lost";
 const ATTACHMENT_COLUMN = "Attachment 1";
 const ATTACHMENT_COLUMN_PATTERN = /^Attachment \d+$/;
@@ -330,7 +332,10 @@ function renderTransactions() {
 
     REQUIRED_COLUMNS.forEach((column) => {
       const classes = column === DEBIT_COLUMN || column === "Total credited" ? "numeric" : "";
-      tr.append(createCell(row[column], classes));
+      const cell = column === ATTACHMENT_COLUMN
+        ? createAttachmentCell(row[column], classes)
+        : createCell(row[column], classes);
+      tr.append(cell);
     });
 
     elements.transactionBody.append(tr);
@@ -346,6 +351,28 @@ function createCell(text, className = "") {
   return td;
 }
 
+function createAttachmentCell(text, className = "") {
+  const td = document.createElement("td");
+  const attachmentUrl = String(text || "").trim();
+
+  if (className) {
+    td.className = className;
+  }
+
+  if (!attachmentUrl) {
+    return td;
+  }
+
+  const link = document.createElement("a");
+  link.href = attachmentUrl;
+  link.textContent = attachmentUrl;
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+  td.append(link);
+
+  return td;
+}
+
 function emptyRow(message, colSpan) {
   const tr = document.createElement("tr");
   tr.className = "empty-row";
@@ -357,10 +384,18 @@ function emptyRow(message, colSpan) {
 }
 
 function isMissingReceipt(row) {
+  if (!isReceiptRequiredTransaction(row)) {
+    return false;
+  }
+
   const lostValue = row[ATTACHMENT_LOST_COLUMN].toLowerCase();
   const hasNoAttachment = !row[INTERNAL_HAS_RECEIPT];
   const isMarkedLost = ["yes", "true", "1", "lost", "y"].includes(lostValue);
   return hasNoAttachment || isMarkedLost;
+}
+
+function isReceiptRequiredTransaction(row) {
+  return row[TYPE_COLUMN].trim().toLowerCase() === "card" && row[STATUS_COLUMN].trim().toLowerCase() === "complete";
 }
 
 function toDateInputValue(value) {
