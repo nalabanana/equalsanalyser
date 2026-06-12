@@ -62,10 +62,10 @@ const elements = {
 };
 
 elements.csvFile.addEventListener("change", handleFileSelection);
-elements.personFilter.addEventListener("change", applyFilters);
-elements.startDate.addEventListener("change", applyFilters);
-elements.endDate.addEventListener("change", applyFilters);
-elements.missingReceipts.addEventListener("change", applyFilters);
+[elements.personFilter, elements.startDate, elements.endDate, elements.missingReceipts].forEach((element) => {
+  element.addEventListener("change", applyFilters);
+  element.addEventListener("input", applyFilters);
+});
 elements.resetFilters.addEventListener("click", resetFilters);
 
 renderTransactionHeader();
@@ -244,14 +244,15 @@ function resetFilters() {
 }
 
 function applyFilters() {
-  const selectedPerson = elements.personFilter.value;
+  const selectedPerson = elements.personFilter.value.trim();
   const startDate = elements.startDate.value;
   const endDate = elements.endDate.value;
   const onlyMissingReceipts = elements.missingReceipts.checked;
 
   state.filteredRows = state.rows.filter((row) => {
     const rowDate = toDateInputValue(row[DATE_COLUMN]);
-    const matchesPerson = !selectedPerson || row[NAME_COLUMN] === selectedPerson;
+    const rowPerson = row[NAME_COLUMN].trim();
+    const matchesPerson = !selectedPerson || rowPerson === selectedPerson;
     const matchesStart = !startDate || !rowDate || rowDate >= startDate;
     const matchesEnd = !endDate || !rowDate || rowDate <= endDate;
     const matchesReceipt = !onlyMissingReceipts || isMissingReceipt(row);
@@ -259,6 +260,7 @@ function applyFilters() {
     return matchesPerson && matchesStart && matchesEnd && matchesReceipt;
   });
 
+  clearCopyFeedback();
   renderMetrics();
   renderBalanceSummary();
   renderTransactions();
@@ -386,7 +388,7 @@ function renderBulkReceiptEmailAction() {
   elements.bulkEmailActions.innerHTML = "";
   elements.bulkEmailActions.hidden = true;
 
-  const selectedPerson = elements.personFilter.value;
+  const selectedPerson = elements.personFilter.value.trim();
   if (!selectedPerson) {
     return;
   }
@@ -562,6 +564,11 @@ function announceCopied(message, isError = false) {
   setStatus(message, isError);
   elements.copyFeedback.textContent = message;
   elements.copyFeedback.classList.toggle("is-error", isError);
+}
+
+function clearCopyFeedback() {
+  elements.copyFeedback.textContent = "";
+  elements.copyFeedback.classList.remove("is-error");
 }
 
 function setStatus(message, isError = false) {

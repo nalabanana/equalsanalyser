@@ -34,7 +34,7 @@ The app expects the following Equals Money Transaction Activity columns for impo
 
 - Upload a Transaction Activity CSV locally without sending data to a server.
 - View all card holders or filter to a single holder using the `Name` column.
-- Filter transactions by completed date range.
+- Filter transactions by completed date range, with table totals and rows refreshing as soon as filter values change.
 - Show only completed card transactions (`Type` = `Card`, `Status` = `Complete`) that do not have receipts attached.
 - Show 🚨 in the `Attachment lost` column when the CSV value is true.
 - Display one `Amount` column by combining `Total credited` and `Total debited`, with debits shown as negative values.
