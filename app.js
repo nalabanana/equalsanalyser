@@ -12,18 +12,30 @@ const REQUIRED_COLUMNS = [
   "Attachment 1",
 ];
 
-const DISPLAY_COLUMNS = REQUIRED_COLUMNS.filter((column) => column !== "Attachment 1");
-const RECEIPT_EMAIL_COLUMN = "Receipt email";
+const AMOUNT_COLUMN = "Amount";
+const RECEIPT_EMAIL_COLUMN = "Missing receipt email";
 
 const DATE_COLUMN = "Completed date (UTC)";
 const NAME_COLUMN = "Name";
 const BALANCE_COLUMN = "Balance";
+const CREDIT_COLUMN = "Total credited";
 const DEBIT_COLUMN = "Total debited";
 const TYPE_COLUMN = "Type";
 const STATUS_COLUMN = "Status";
 const ATTACHMENT_LOST_COLUMN = "Attachment lost";
 const ATTACHMENT_COLUMN_PATTERN = /^Attachment \d+$/;
 const INTERNAL_HAS_RECEIPT = "__hasReceipt";
+
+const DISPLAY_COLUMNS = [
+  DATE_COLUMN,
+  TYPE_COLUMN,
+  STATUS_COLUMN,
+  "Description",
+  NAME_COLUMN,
+  BALANCE_COLUMN,
+  AMOUNT_COLUMN,
+  ATTACHMENT_LOST_COLUMN,
+];
 
 const state = {
   rows: [],
@@ -32,7 +44,6 @@ const state = {
 
 const elements = {
   csvFile: document.querySelector("#csvFile"),
-  loadSample: document.querySelector("#loadSample"),
   fileName: document.querySelector("#fileName"),
   statusMessage: document.querySelector("#statusMessage"),
   personFilter: document.querySelector("#personFilter"),
@@ -46,10 +57,11 @@ const elements = {
   balanceSummaryBody: document.querySelector("#balanceSummaryBody"),
   transactionHeader: document.querySelector("#transactionHeader"),
   transactionBody: document.querySelector("#transactionBody"),
+  bulkEmailActions: document.querySelector("#bulkEmailActions"),
+  copyFeedback: document.querySelector("#copyFeedback"),
 };
 
 elements.csvFile.addEventListener("change", handleFileSelection);
-elements.loadSample.addEventListener("click", loadSampleCsv);
 elements.personFilter.addEventListener("change", applyFilters);
 elements.startDate.addEventListener("change", applyFilters);
 elements.endDate.addEventListener("change", applyFilters);
@@ -57,27 +69,6 @@ elements.missingReceipts.addEventListener("change", applyFilters);
 elements.resetFilters.addEventListener("click", resetFilters);
 
 renderTransactionHeader();
-
-async function loadSampleCsv() {
-  const samplePath = "examples/transaction-activity-sample.csv";
-
-  try {
-    setStatus("Loading the example CSV...");
-    const response = await fetch(samplePath);
-
-    if (!response.ok) {
-      throw new Error(`Could not load ${samplePath}.`);
-    }
-
-    loadCsv(await response.text());
-    elements.fileName.textContent = "Example Transaction Activity CSV";
-  } catch (error) {
-    setStatus(
-      "The example CSV could not be loaded. Start a local web server with `python3 -m http.server 4173`, then refresh the page.",
-      true,
-    );
-  }
-}
 
 function handleFileSelection(event) {
   const [file] = event.target.files;
@@ -271,6 +262,7 @@ function applyFilters() {
   renderMetrics();
   renderBalanceSummary();
   renderTransactions();
+  renderBulkReceiptEmailAction();
 }
 
 function renderMetrics() {
@@ -308,18 +300,19 @@ function renderBalanceSummary() {
 
 function renderTransactionHeader() {
   elements.transactionHeader.innerHTML = "";
-  DISPLAY_COLUMNS.forEach((column) => {
-    const th = document.createElement("th");
-    th.textContent = column;
-    if (column === DEBIT_COLUMN || column === "Total credited") {
-      th.classList.add("numeric");
-    }
-    elements.transactionHeader.append(th);
-  });
 
   const actionHeader = document.createElement("th");
   actionHeader.textContent = RECEIPT_EMAIL_COLUMN;
   elements.transactionHeader.append(actionHeader);
+
+  DISPLAY_COLUMNS.forEach((column) => {
+    const th = document.createElement("th");
+    th.textContent = column;
+    if (column === AMOUNT_COLUMN) {
+      th.classList.add("numeric");
+    }
+    elements.transactionHeader.append(th);
+  });
 }
 
 function renderTransactions() {
@@ -336,11 +329,11 @@ function renderTransactions() {
       tr.classList.add("missing-receipt");
     }
 
+    tr.append(createReceiptEmailCell(row));
     DISPLAY_COLUMNS.forEach((column) => {
-      const classes = column === DEBIT_COLUMN || column === "Total credited" ? "numeric" : "";
+      const classes = column === AMOUNT_COLUMN ? "numeric" : "";
       tr.append(createCell(formatDisplayValue(row, column), classes));
     });
-    tr.append(createReceiptEmailCell(row));
 
     elements.transactionBody.append(tr);
   });
@@ -360,7 +353,21 @@ function formatDisplayValue(row, column) {
     return isTruthyValue(row[column]) ? "🚨" : "";
   }
 
+  if (column === AMOUNT_COLUMN) {
+    return formatTransactionAmount(row);
+  }
+
   return row[column];
+}
+
+function formatTransactionAmount(row) {
+  const debited = parseCurrency(row[DEBIT_COLUMN]);
+
+  if (debited) {
+    return `-${formatCurrency(Math.abs(debited))}`;
+  }
+
+  return formatCurrency(parseCurrency(row[CREDIT_COLUMN]));
 }
 
 function createReceiptEmailCell(row) {
@@ -370,30 +377,60 @@ function createReceiptEmailCell(row) {
     return td;
   }
 
-  const button = document.createElement("button");
-  button.className = "copy-email-button";
-  button.type = "button";
-  button.textContent = "Copy email";
-  button.addEventListener("click", async () => {
-    try {
-      await copyTextToClipboard(generateMissingReceiptEmail(row));
-      setStatus(`Copied receipt request email for ${row[NAME_COLUMN] || "this transaction"}.`);
-    } catch (error) {
-      setStatus("The email text could not be copied. Please try again.", true);
-    }
-  });
-  td.append(button);
+  td.append(createCopyEmailButton("Copy email", () => generateMissingReceiptEmail(row), row[NAME_COLUMN] || "this transaction"));
 
   return td;
 }
 
+function renderBulkReceiptEmailAction() {
+  elements.bulkEmailActions.innerHTML = "";
+  elements.bulkEmailActions.hidden = true;
+
+  const selectedPerson = elements.personFilter.value;
+  if (!selectedPerson) {
+    return;
+  }
+
+  const missingReceiptRows = state.filteredRows.filter(isMissingReceipt);
+  if (!missingReceiptRows.length) {
+    return;
+  }
+
+  const helperText = document.createElement("p");
+  helperText.textContent = `${selectedPerson} has ${missingReceiptRows.length.toLocaleString()} transaction${missingReceiptRows.length === 1 ? "" : "s"} without receipts in the current filter.`;
+
+  const button = createCopyEmailButton(
+    "Copy email for all missing receipts",
+    () => generateBulkMissingReceiptEmail(selectedPerson, missingReceiptRows),
+    `${selectedPerson}'s missing receipt transactions`,
+  );
+
+  elements.bulkEmailActions.append(helperText, button);
+  elements.bulkEmailActions.hidden = false;
+}
+
+function createCopyEmailButton(label, getMessage, copiedLabel) {
+  const button = document.createElement("button");
+  button.className = "copy-email-button";
+  button.type = "button";
+  button.textContent = label;
+  button.addEventListener("click", async () => {
+    try {
+      await copyTextToClipboard(getMessage());
+      announceCopied(`Copied email message to clipboard for ${copiedLabel}.`);
+      button.textContent = "Copied!";
+      window.setTimeout(() => {
+        button.textContent = label;
+      }, 2000);
+    } catch (error) {
+      announceCopied("The email text could not be copied. Please try again.", true);
+    }
+  });
+  return button;
+}
+
 function generateMissingReceiptEmail(row) {
   const cardHolder = row[NAME_COLUMN] || "there";
-  const description = row["Description"] || "No description supplied";
-  const reference = row["Reference"] || "No reference supplied";
-  const completedDate = row[DATE_COLUMN] || "No completed date supplied";
-  const balance = row[BALANCE_COLUMN] || "No balance supplied";
-  const debitAmount = row[DEBIT_COLUMN] ? formatCurrency(parseCurrency(row[DEBIT_COLUMN])) : "0.00";
 
   return [
     `Hi ${cardHolder},`,
@@ -401,13 +438,37 @@ function generateMissingReceiptEmail(row) {
     "Please log in to the Equals app and upload a receipt for this card transaction as soon as possible.",
     "",
     "Transaction details:",
-    `- Completed date: ${completedDate}`,
-    `- Description: ${description}`,
-    `- Reference: ${reference}`,
-    `- Balance: ${balance}`,
-    `- Total debited: ${debitAmount}`,
+    formatEmailTransactionDetails(row),
     "",
     "Thank you.",
+  ].join("\n");
+}
+
+function generateBulkMissingReceiptEmail(cardHolder, rows) {
+  return [
+    `Hi ${cardHolder},`,
+    "",
+    "Please log in to the Equals app and upload receipts for the following card transactions as soon as possible.",
+    "",
+    "Transactions missing receipts:",
+    rows.map((row, index) => formatEmailTransactionDetails(row, index + 1)).join("\n\n"),
+    "",
+    "Thank you.",
+  ].join("\n");
+}
+
+function formatEmailTransactionDetails(row, itemNumber = null) {
+  const prefix = itemNumber ? `${itemNumber}. ` : "- ";
+  const description = row["Description"] || "No description supplied";
+  const completedDate = row[DATE_COLUMN] || "No completed date supplied";
+  const balance = row[BALANCE_COLUMN] || "No balance supplied";
+  const amount = formatTransactionAmount(row);
+
+  return [
+    `${prefix}Completed date: ${completedDate}`,
+    `  Description: ${description}`,
+    `  Balance: ${balance}`,
+    `  Amount: ${amount}`,
   ].join("\n");
 }
 
@@ -495,6 +556,12 @@ function formatCurrency(value) {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value);
+}
+
+function announceCopied(message, isError = false) {
+  setStatus(message, isError);
+  elements.copyFeedback.textContent = message;
+  elements.copyFeedback.classList.toggle("is-error", isError);
 }
 
 function setStatus(message, isError = false) {

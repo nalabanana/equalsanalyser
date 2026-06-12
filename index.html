@@ -25,15 +25,12 @@
             The app runs fully in your browser. CSV data is not uploaded anywhere.
           </p>
         </div>
-        <div class="upload-actions">
-          <label class="file-drop" for="csvFile">
-            <span class="file-drop__icon" aria-hidden="true">⬆</span>
-            <span class="file-drop__title">Choose CSV file</span>
-            <span id="fileName" class="file-drop__hint">No file selected</span>
-            <input id="csvFile" type="file" accept=".csv,text/csv" />
-          </label>
-          <button id="loadSample" class="secondary-button sample-button" type="button">Load example CSV</button>
-        </div>
+        <label class="file-drop" for="csvFile">
+          <span class="file-drop__icon" aria-hidden="true">⬆</span>
+          <span class="file-drop__title">Choose CSV file</span>
+          <span id="fileName" class="file-drop__hint">No file selected</span>
+          <input id="csvFile" type="file" accept=".csv,text/csv" />
+        </label>
         <p id="statusMessage" class="status-message" role="status" aria-live="polite">
           Waiting for a Transaction Activity CSV.
         </p>
@@ -103,6 +100,8 @@
             </tbody>
           </table>
         </div>
+        <div id="bulkEmailActions" class="bulk-email-actions" hidden></div>
+        <p id="copyFeedback" class="copy-feedback" role="status" aria-live="polite"></p>
       </section>
 
       <section class="panel" aria-labelledby="balance-heading">

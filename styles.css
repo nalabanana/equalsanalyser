@@ -89,11 +89,6 @@ body {
   margin: 0;
 }
 
-.upload-actions {
-  display: grid;
-  gap: 12px;
-}
-
 .file-drop {
   align-items: center;
   border: 2px dashed #9db4e6;
@@ -179,10 +174,6 @@ body {
 
 .secondary-button:hover {
   background: #dce8ff;
-}
-
-.sample-button {
-  justify-self: center;
 }
 
 .filters-grid {
@@ -307,6 +298,34 @@ tr:last-child td {
 
 .copy-email-button:hover {
   background: var(--primary-dark);
+}
+
+.bulk-email-actions {
+  align-items: center;
+  background: #f8faff;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+  margin-top: 16px;
+  padding: 14px 16px;
+}
+
+.bulk-email-actions p,
+.copy-feedback {
+  color: var(--muted);
+  margin: 0;
+}
+
+.copy-feedback {
+  font-weight: 700;
+  margin-top: 12px;
+}
+
+.copy-feedback.is-error {
+  color: #b42318;
 }
 
 .numeric {
