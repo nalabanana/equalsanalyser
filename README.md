@@ -18,7 +18,7 @@ You can also open `index.html` directly from the filesystem in most modern brows
 
 ## Supported CSV columns
 
-The app expects the following Equals Money Transaction Activity columns for display and filtering. It ignores most other columns, but if `Attachment 2` through `Attachment 10` are present they are also checked when deciding whether a receipt exists.
+The app expects the following Equals Money Transaction Activity columns for filtering and receipt detection. It does not display `Attachment 1`, but if `Attachment 1` through `Attachment 10` are present they are checked when deciding whether a receipt exists.
 
 - `Completed date (UTC)`
 - `Type`
@@ -30,7 +30,7 @@ The app expects the following Equals Money Transaction Activity columns for disp
 - `Total credited`
 - `Total debited`
 - `Attachment lost`
-- `Attachment 1`
+- `Attachment 1` (used for receipt detection, not displayed)
 
 ## Features
 
@@ -39,8 +39,8 @@ The app expects the following Equals Money Transaction Activity columns for disp
 - View all card holders or filter to a single holder using the `Name` column.
 - Filter transactions by completed date range.
 - Show only completed card transactions (`Type` = `Card`, `Status` = `Complete`) that do not have receipts attached.
-- Open `Attachment 1` receipt URLs directly from the results table.
-- Review a summary of summed `Total debited` values grouped by `Balance`.
+- Show 🚨 in the `Attachment lost` column when the CSV value is true.
+- Review a bottom-of-page summary of summed `Total debited` values grouped by `Balance`.
 
 ## Example data notes
 

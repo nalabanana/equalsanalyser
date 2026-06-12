@@ -12,6 +12,8 @@ const REQUIRED_COLUMNS = [
   "Attachment 1",
 ];
 
+const DISPLAY_COLUMNS = REQUIRED_COLUMNS.filter((column) => column !== "Attachment 1");
+
 const DATE_COLUMN = "Completed date (UTC)";
 const NAME_COLUMN = "Name";
 const BALANCE_COLUMN = "Balance";
@@ -19,7 +21,6 @@ const DEBIT_COLUMN = "Total debited";
 const TYPE_COLUMN = "Type";
 const STATUS_COLUMN = "Status";
 const ATTACHMENT_LOST_COLUMN = "Attachment lost";
-const ATTACHMENT_COLUMN = "Attachment 1";
 const ATTACHMENT_COLUMN_PATTERN = /^Attachment \d+$/;
 const INTERNAL_HAS_RECEIPT = "__hasReceipt";
 
@@ -306,7 +307,7 @@ function renderBalanceSummary() {
 
 function renderTransactionHeader() {
   elements.transactionHeader.innerHTML = "";
-  REQUIRED_COLUMNS.forEach((column) => {
+  DISPLAY_COLUMNS.forEach((column) => {
     const th = document.createElement("th");
     th.textContent = column;
     if (column === DEBIT_COLUMN || column === "Total credited") {
@@ -320,7 +321,7 @@ function renderTransactions() {
   elements.transactionBody.innerHTML = "";
 
   if (!state.filteredRows.length) {
-    elements.transactionBody.append(emptyRow("No matching transactions.", REQUIRED_COLUMNS.length));
+    elements.transactionBody.append(emptyRow("No matching transactions.", DISPLAY_COLUMNS.length));
     return;
   }
 
@@ -330,12 +331,9 @@ function renderTransactions() {
       tr.classList.add("missing-receipt");
     }
 
-    REQUIRED_COLUMNS.forEach((column) => {
+    DISPLAY_COLUMNS.forEach((column) => {
       const classes = column === DEBIT_COLUMN || column === "Total credited" ? "numeric" : "";
-      const cell = column === ATTACHMENT_COLUMN
-        ? createAttachmentCell(row[column], classes)
-        : createCell(row[column], classes);
-      tr.append(cell);
+      tr.append(createCell(formatDisplayValue(row, column), classes));
     });
 
     elements.transactionBody.append(tr);
@@ -351,26 +349,12 @@ function createCell(text, className = "") {
   return td;
 }
 
-function createAttachmentCell(text, className = "") {
-  const td = document.createElement("td");
-  const attachmentUrl = String(text || "").trim();
-
-  if (className) {
-    td.className = className;
+function formatDisplayValue(row, column) {
+  if (column === ATTACHMENT_LOST_COLUMN) {
+    return isTruthyValue(row[column]) ? "🚨" : "";
   }
 
-  if (!attachmentUrl) {
-    return td;
-  }
-
-  const link = document.createElement("a");
-  link.href = attachmentUrl;
-  link.textContent = attachmentUrl;
-  link.target = "_blank";
-  link.rel = "noopener noreferrer";
-  td.append(link);
-
-  return td;
+  return row[column];
 }
 
 function emptyRow(message, colSpan) {
@@ -390,8 +374,12 @@ function isMissingReceipt(row) {
 
   const lostValue = row[ATTACHMENT_LOST_COLUMN].toLowerCase();
   const hasNoAttachment = !row[INTERNAL_HAS_RECEIPT];
-  const isMarkedLost = ["yes", "true", "1", "lost", "y"].includes(lostValue);
+  const isMarkedLost = isTruthyValue(lostValue) || lostValue === "lost";
   return hasNoAttachment || isMarkedLost;
+}
+
+function isTruthyValue(value) {
+  return ["yes", "true", "1", "y"].includes(String(value || "").trim().toLowerCase());
 }
 
 function isReceiptRequiredTransaction(row) {
