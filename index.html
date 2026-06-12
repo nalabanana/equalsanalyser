@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Equals Money Transaction Analyser</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Equals Money expense cards</p>
+        <h1>Transaction Activity analyser</h1>
+        <p class="intro">
+          Upload a Transaction Activity CSV, filter by date or card holder, and quickly find card payments that are missing receipts.
+        </p>
+      </div>
+    </header>
+
+    <main class="app-shell">
+      <section class="panel upload-panel" aria-labelledby="upload-heading">
+        <div>
+          <h2 id="upload-heading">Upload transaction CSV</h2>
+          <p>
+            The app runs fully in your browser. CSV data is not uploaded anywhere.
+          </p>
+        </div>
+        <label class="file-drop" for="csvFile">
+          <span class="file-drop__icon" aria-hidden="true">⬆</span>
+          <span class="file-drop__title">Choose CSV file</span>
+          <span id="fileName" class="file-drop__hint">No file selected</span>
+          <input id="csvFile" type="file" accept=".csv,text/csv" />
+        </label>
+        <p id="statusMessage" class="status-message" role="status" aria-live="polite">
+          Waiting for a Transaction Activity CSV.
+        </p>
+      </section>
+
+      <section class="panel controls-panel" aria-labelledby="filters-heading">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Filters</p>
+            <h2 id="filters-heading">Narrow the data</h2>
+          </div>
+          <button id="resetFilters" class="secondary-button" type="button">Reset filters</button>
+        </div>
+
+        <div class="filters-grid">
+          <label>
+            <span>Card holder</span>
+            <select id="personFilter" disabled>
+              <option value="">All card holders</option>
+            </select>
+          </label>
+          <label>
+            <span>From date</span>
+            <input id="startDate" type="date" disabled />
+          </label>
+          <label>
+            <span>To date</span>
+            <input id="endDate" type="date" disabled />
+          </label>
+          <label class="checkbox-filter">
+            <input id="missingReceipts" type="checkbox" disabled />
+            <span>Only show transactions without receipts</span>
+          </label>
+        </div>
+      </section>
+
+      <section class="summary-grid" aria-label="Filtered totals">
+        <article class="metric-card">
+          <span>Filtered transactions</span>
+          <strong id="transactionCount">0</strong>
+        </article>
+        <article class="metric-card">
+          <span>Missing receipts</span>
+          <strong id="missingReceiptCount">0</strong>
+        </article>
+        <article class="metric-card">
+          <span>Total debited</span>
+          <strong id="grandDebitTotal">0.00</strong>
+        </article>
+      </section>
+
+
+      <section class="panel" aria-labelledby="transactions-heading">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Transactions</p>
+            <h2 id="transactions-heading">Filtered transaction activity</h2>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr id="transactionHeader"></tr>
+            </thead>
+            <tbody id="transactionBody">
+              <tr class="empty-row"><td>Upload a CSV to review transactions.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="bulkEmailActions" class="bulk-email-actions" hidden></div>
+        <p id="copyFeedback" class="copy-feedback" role="status" aria-live="polite"></p>
+      </section>
+
+      <section class="panel" aria-labelledby="balance-heading">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Summary</p>
+            <h2 id="balance-heading">Total debits by Balance</h2>
+          </div>
+        </div>
+        <div class="table-wrap summary-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Balance</th>
+                <th class="numeric">Sum of total debits</th>
+              </tr>
+            </thead>
+            <tbody id="balanceSummaryBody">
+              <tr class="empty-row"><td colspan="2">Upload a CSV to see the balance summary.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
