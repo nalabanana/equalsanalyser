@@ -15,6 +15,7 @@ const REQUIRED_COLUMNS = [
 const AMOUNT_COLUMN = "Amount";
 const RECEIPT_EMAIL_COLUMN = "Missing receipt email";
 const TRANSACTION_TYPES = ["Card", "Credit", "Debit", "Fee", "Card refund", "Card check"];
+const DEFAULT_TRANSACTION_TYPES = new Set(["Card"]);
 
 const DATE_COLUMN = "Completed date (UTC)";
 const NAME_COLUMN = "Name";
@@ -48,6 +49,8 @@ const elements = {
   fileName: document.querySelector("#fileName"),
   statusMessage: document.querySelector("#statusMessage"),
   personFilter: document.querySelector("#personFilter"),
+  balanceFilter: document.querySelector("#balanceFilter"),
+  sortBy: document.querySelector("#sortBy"),
   startDate: document.querySelector("#startDate"),
   endDate: document.querySelector("#endDate"),
   missingReceipts: document.querySelector("#missingReceipts"),
@@ -64,7 +67,7 @@ const elements = {
 };
 
 elements.csvFile.addEventListener("change", handleFileSelection);
-[elements.personFilter, elements.startDate, elements.endDate, elements.missingReceipts, ...elements.typeFilters].forEach((element) => {
+[elements.personFilter, elements.balanceFilter, elements.sortBy, elements.startDate, elements.endDate, elements.missingReceipts, ...elements.typeFilters].forEach((element) => {
   element.addEventListener("change", applyFilters);
   element.addEventListener("input", applyFilters);
 });
@@ -102,6 +105,7 @@ function loadCsv(csvText) {
 
     state.rows = records.map((record) => normalizeRecord(record));
     populatePeopleFilter(state.rows);
+    populateBalanceFilter(state.rows);
     setDateBounds(state.rows);
     enableFilters();
     applyFilters();
@@ -220,6 +224,17 @@ function populatePeopleFilter(rows) {
   });
 }
 
+function populateBalanceFilter(rows) {
+  const balances = Array.from(new Set(rows.map((row) => row[BALANCE_COLUMN]).filter(Boolean))).sort((a, b) => a.localeCompare(b));
+  elements.balanceFilter.innerHTML = '<option value="">All balances</option>';
+  balances.forEach((balance) => {
+    const option = document.createElement("option");
+    option.value = balance;
+    option.textContent = balance;
+    elements.balanceFilter.append(option);
+  });
+}
+
 function setDateBounds(rows) {
   const dates = rows.map((row) => toDateInputValue(row[DATE_COLUMN])).filter(Boolean).sort();
   elements.startDate.value = dates[0] || "";
@@ -227,22 +242,24 @@ function setDateBounds(rows) {
 }
 
 function enableFilters() {
-  [elements.personFilter, elements.startDate, elements.endDate, elements.missingReceipts, ...elements.typeFilters].forEach((element) => {
+  [elements.personFilter, elements.balanceFilter, elements.sortBy, elements.startDate, elements.endDate, elements.missingReceipts, ...elements.typeFilters].forEach((element) => {
     element.disabled = false;
   });
 }
 
 function disableFilters() {
-  [elements.personFilter, elements.startDate, elements.endDate, elements.missingReceipts, ...elements.typeFilters].forEach((element) => {
+  [elements.personFilter, elements.balanceFilter, elements.sortBy, elements.startDate, elements.endDate, elements.missingReceipts, ...elements.typeFilters].forEach((element) => {
     element.disabled = true;
   });
 }
 
 function resetFilters() {
   elements.personFilter.value = "";
+  elements.balanceFilter.value = "";
+  elements.sortBy.value = "date";
   elements.missingReceipts.checked = false;
   elements.typeFilters.forEach((checkbox) => {
-    checkbox.checked = TRANSACTION_TYPES.includes(checkbox.value);
+    checkbox.checked = DEFAULT_TRANSACTION_TYPES.has(checkbox.value);
   });
   setDateBounds(state.rows);
   applyFilters();
@@ -250,6 +267,7 @@ function resetFilters() {
 
 function applyFilters() {
   const selectedPerson = elements.personFilter.value.trim();
+  const selectedBalance = elements.balanceFilter.value.trim();
   const startDate = elements.startDate.value;
   const endDate = elements.endDate.value;
   const onlyMissingReceipts = elements.missingReceipts.checked;
@@ -259,19 +277,36 @@ function applyFilters() {
     const rowDate = toDateInputValue(row[DATE_COLUMN]);
     const rowPerson = row[NAME_COLUMN].trim();
     const matchesPerson = !selectedPerson || rowPerson === selectedPerson;
+    const matchesBalance = !selectedBalance || row[BALANCE_COLUMN].trim() === selectedBalance;
     const matchesStart = !startDate || !rowDate || rowDate >= startDate;
     const matchesEnd = !endDate || !rowDate || rowDate <= endDate;
     const matchesType = selectedTypes.has(row[TYPE_COLUMN].trim());
     const matchesReceipt = !onlyMissingReceipts || isMissingReceipt(row);
 
-    return matchesPerson && matchesStart && matchesEnd && matchesType && matchesReceipt;
+    return matchesPerson && matchesBalance && matchesStart && matchesEnd && matchesType && matchesReceipt;
   });
 
+  sortFilteredRows();
   clearCopyFeedback();
   renderMetrics();
   renderBalanceSummary();
   renderTransactions();
   renderBulkReceiptEmailAction();
+}
+
+function sortFilteredRows() {
+  const sortBy = elements.sortBy.value;
+
+  state.filteredRows.sort((a, b) => {
+    if (sortBy === "name") {
+      const nameComparison = a[NAME_COLUMN].localeCompare(b[NAME_COLUMN]);
+      if (nameComparison) {
+        return nameComparison;
+      }
+    }
+
+    return toDateInputValue(a[DATE_COLUMN]).localeCompare(toDateInputValue(b[DATE_COLUMN]));
+  });
 }
 
 function getSelectedTransactionTypes() {

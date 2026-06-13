@@ -33,8 +33,8 @@ The app expects the following Equals Money Transaction Activity columns for impo
 ## Features
 
 - Upload a Transaction Activity CSV locally without sending data to a server.
-- View all card holders or filter to a single holder using the `Name` column.
-- Filter transactions by completed date range and by transaction type (`Card`, `Credit`, `Debit`, `Fee`, `Card refund`, `Card check`), with table totals and rows refreshing as soon as filter values change.
+- View all card holders or filter to a single holder using the `Name` column, and filter by `Balance`.
+- Sort transactions by date (default) or card holder name, and filter transactions by completed date range and by transaction type (`Card`, `Credit`, `Debit`, `Fee`, `Card refund`, `Card check`), with `Card` selected by default and table totals/rows refreshing as soon as filter values change.
 - Show only completed card transactions (`Type` = `Card`, `Status` = `Complete`) that do not have receipts attached.
 - Show 🚨 in the `Attachment lost` column when the CSV value is true.
 - Display one `Amount` column by combining `Total credited` and `Total debited`, with debits shown as negative values.

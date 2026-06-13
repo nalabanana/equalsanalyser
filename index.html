@@ -53,6 +53,19 @@
             </select>
           </label>
           <label>
+            <span>Balance</span>
+            <select id="balanceFilter" disabled>
+              <option value="">All balances</option>
+            </select>
+          </label>
+          <label>
+            <span>Sort transactions by</span>
+            <select id="sortBy" disabled>
+              <option value="date">Date</option>
+              <option value="name">Card holder name</option>
+            </select>
+          </label>
+          <label>
             <span>From date</span>
             <input id="startDate" type="date" disabled />
           </label>
@@ -62,7 +75,7 @@
           </label>
           <label class="checkbox-filter">
             <input id="missingReceipts" type="checkbox" disabled />
-            <span>Only show transactions without receipts</span>
+            <span>Only show completed card transactions without receipts</span>
           </label>
           <fieldset class="type-filter-group" aria-labelledby="type-filter-heading">
             <legend id="type-filter-heading">Transaction types</legend>
@@ -71,23 +84,23 @@
               <span>Card</span>
             </label>
             <label>
-              <input type="checkbox" name="typeFilter" value="Credit" checked disabled />
+              <input type="checkbox" name="typeFilter" value="Credit" disabled />
               <span>Credit</span>
             </label>
             <label>
-              <input type="checkbox" name="typeFilter" value="Debit" checked disabled />
+              <input type="checkbox" name="typeFilter" value="Debit" disabled />
               <span>Debit</span>
             </label>
             <label>
-              <input type="checkbox" name="typeFilter" value="Fee" checked disabled />
+              <input type="checkbox" name="typeFilter" value="Fee" disabled />
               <span>Fee</span>
             </label>
             <label>
-              <input type="checkbox" name="typeFilter" value="Card refund" checked disabled />
+              <input type="checkbox" name="typeFilter" value="Card refund" disabled />
               <span>Card refund</span>
             </label>
             <label>
-              <input type="checkbox" name="typeFilter" value="Card check" checked disabled />
+              <input type="checkbox" name="typeFilter" value="Card check" disabled />
               <span>Card check</span>
             </label>
           </fieldset>
@@ -153,6 +166,11 @@
         </div>
       </section>
     </main>
+
+    <footer class="site-footer">
+      Created by
+      <a href="https://southamptoncityscouts.org.uk" target="_blank" rel="noopener noreferrer">Southampton City Scouts</a>
+    </footer>
 
     <script src="app.js"></script>
   </body>

@@ -376,6 +376,24 @@ tr:last-child td {
   text-align: center;
 }
 
+.site-footer {
+  color: var(--muted);
+  font-size: 0.95rem;
+  margin: 0 auto 32px;
+  max-width: 1260px;
+  padding: 0 clamp(16px, 4vw, 32px);
+  text-align: center;
+}
+
+.site-footer a {
+  color: var(--primary);
+  font-weight: 800;
+}
+
+.site-footer a:hover {
+  color: var(--primary-dark);
+}
+
 @media (max-width: 900px) {
   .upload-panel,
   .filters-grid,
