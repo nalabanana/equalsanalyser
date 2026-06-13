@@ -221,6 +221,39 @@ input[type="date"] {
   margin: 0;
 }
 
+.type-filter-group {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  display: grid;
+  gap: 12px;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  margin: 0;
+  padding: 14px;
+}
+
+.type-filter-group legend {
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 800;
+  padding: 0 6px;
+}
+
+.type-filter-group label {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.type-filter-group input {
+  height: 18px;
+  width: 18px;
+}
+
+.type-filter-group span {
+  margin: 0;
+}
+
 .summary-grid {
   display: grid;
   gap: 18px;
@@ -346,7 +379,8 @@ tr:last-child td {
 @media (max-width: 900px) {
   .upload-panel,
   .filters-grid,
-  .summary-grid {
+  .summary-grid,
+  .type-filter-group {
     grid-template-columns: 1fr;
   }
 

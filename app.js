@@ -14,6 +14,7 @@ const REQUIRED_COLUMNS = [
 
 const AMOUNT_COLUMN = "Amount";
 const RECEIPT_EMAIL_COLUMN = "Missing receipt email";
+const TRANSACTION_TYPES = ["Card", "Credit", "Debit", "Fee", "Card refund", "Card check"];
 
 const DATE_COLUMN = "Completed date (UTC)";
 const NAME_COLUMN = "Name";
@@ -50,6 +51,7 @@ const elements = {
   startDate: document.querySelector("#startDate"),
   endDate: document.querySelector("#endDate"),
   missingReceipts: document.querySelector("#missingReceipts"),
+  typeFilters: Array.from(document.querySelectorAll('[name="typeFilter"]')),
   resetFilters: document.querySelector("#resetFilters"),
   transactionCount: document.querySelector("#transactionCount"),
   missingReceiptCount: document.querySelector("#missingReceiptCount"),
@@ -62,7 +64,7 @@ const elements = {
 };
 
 elements.csvFile.addEventListener("change", handleFileSelection);
-[elements.personFilter, elements.startDate, elements.endDate, elements.missingReceipts].forEach((element) => {
+[elements.personFilter, elements.startDate, elements.endDate, elements.missingReceipts, ...elements.typeFilters].forEach((element) => {
   element.addEventListener("change", applyFilters);
   element.addEventListener("input", applyFilters);
 });
@@ -225,13 +227,13 @@ function setDateBounds(rows) {
 }
 
 function enableFilters() {
-  [elements.personFilter, elements.startDate, elements.endDate, elements.missingReceipts].forEach((element) => {
+  [elements.personFilter, elements.startDate, elements.endDate, elements.missingReceipts, ...elements.typeFilters].forEach((element) => {
     element.disabled = false;
   });
 }
 
 function disableFilters() {
-  [elements.personFilter, elements.startDate, elements.endDate, elements.missingReceipts].forEach((element) => {
+  [elements.personFilter, elements.startDate, elements.endDate, elements.missingReceipts, ...elements.typeFilters].forEach((element) => {
     element.disabled = true;
   });
 }
@@ -239,6 +241,9 @@ function disableFilters() {
 function resetFilters() {
   elements.personFilter.value = "";
   elements.missingReceipts.checked = false;
+  elements.typeFilters.forEach((checkbox) => {
+    checkbox.checked = TRANSACTION_TYPES.includes(checkbox.value);
+  });
   setDateBounds(state.rows);
   applyFilters();
 }
@@ -248,6 +253,7 @@ function applyFilters() {
   const startDate = elements.startDate.value;
   const endDate = elements.endDate.value;
   const onlyMissingReceipts = elements.missingReceipts.checked;
+  const selectedTypes = getSelectedTransactionTypes();
 
   state.filteredRows = state.rows.filter((row) => {
     const rowDate = toDateInputValue(row[DATE_COLUMN]);
@@ -255,9 +261,10 @@ function applyFilters() {
     const matchesPerson = !selectedPerson || rowPerson === selectedPerson;
     const matchesStart = !startDate || !rowDate || rowDate >= startDate;
     const matchesEnd = !endDate || !rowDate || rowDate <= endDate;
+    const matchesType = selectedTypes.has(row[TYPE_COLUMN].trim());
     const matchesReceipt = !onlyMissingReceipts || isMissingReceipt(row);
 
-    return matchesPerson && matchesStart && matchesEnd && matchesReceipt;
+    return matchesPerson && matchesStart && matchesEnd && matchesType && matchesReceipt;
   });
 
   clearCopyFeedback();
@@ -265,6 +272,14 @@ function applyFilters() {
   renderBalanceSummary();
   renderTransactions();
   renderBulkReceiptEmailAction();
+}
+
+function getSelectedTransactionTypes() {
+  return new Set(
+    elements.typeFilters
+      .filter((checkbox) => checkbox.checked && TRANSACTION_TYPES.includes(checkbox.value))
+      .map((checkbox) => checkbox.value),
+  );
 }
 
 function renderMetrics() {
